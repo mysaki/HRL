@@ -19,10 +19,10 @@ Log/*
 log/*
 
 # model:
-.pth
+*.pth
 
 # record:
-.xlsx
-.jpg
-.png
-.txt
+*.xlsx
+*.jpg
+*.png
+*.txt
