@@ -9,13 +9,14 @@ import os
 os.environ['CUDA_VISIBLE_DEVICES'] = "0,1"
 task="Hierarchical-v1"
 resume_model = "hierarchical_track_dqn_12_6_14_19"
-resume = True
+# resume_model = "hierarchical_track_dqn_1_8_9_9"
+resume = False
 reward_threshold=4900000
-seed=1
+seed=1   
 buffer_size=20000
 lr=1e-3
 gamma=0.995
-epoch=100
+epoch=1000
 step_per_epoch=20000
 episode_per_collect=16
 repeat_per_collect=2
@@ -24,7 +25,7 @@ eps_test = 0.05
 eps_train =0.3
 batch_size=512
 hidden_sizes=[64, 64]
-headless = True if resume == False else True
+headless = True if resume == False else False
 training_num=20
 test_num=2
 num_atoms = 51
@@ -72,8 +73,8 @@ low_policy_params={
 # }
 high_policy_params = {
     "n_step": 3,
-    "target_update_freq": 4,
-    "hidden_size": [128, 128, 128, 128],
+    "target_update_freq": 8,
+    "hidden_size": [128, 128],
     "feature_dim": 256,
 }
 

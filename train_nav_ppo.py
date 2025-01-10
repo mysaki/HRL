@@ -27,8 +27,8 @@ def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('--headless', type=bool, default=True)
     parser.add_argument("--task", type=str, default="Navigation-v0")
-    parser.add_argument('--test', type=bool, default=True)
-    parser.add_argument("--load-model", type=bool, default=True)
+    parser.add_argument('--test', type=bool, default=False)
+    parser.add_argument("--load-model", type=bool, default=False)
     parser.add_argument("--reward-threshold", type=float, default=150000000)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--buffer-size", type=int, default=20000)
@@ -81,7 +81,7 @@ def test_ppo(args: argparse.Namespace = get_args()) -> None:
     # log
     log_path = os.path.join(args.logdir, "nav_{}_ppo_{}_{}_{}_{}".format(
         label,time.month, time.day, time.hour, time.minute, time.second))
-    log_model_name = "nav_train_ppo_11_14_14_33"
+    log_model_name = "nav_train_ppo_12_24_16_28"
     log_mode_path = os.path.join("Log", log_model_name)
     writer = SummaryWriter(log_path)
 
@@ -96,7 +96,9 @@ def test_ppo(args: argparse.Namespace = get_args()) -> None:
     # Q_param = V_param = {"hidden_sizes": [64, 64]}
     # CPNet = Critic_Preprocess_Net(
     #     input_dim=34, action_shape=2, device=args.device, num_atoms=2, dueling_param=(Q_param, V_param), feature_dim=64, hidden_size=64)
-    APNet=STAR(input_dim=np.prod(args.state_shape)+32, feature_dim=256, device=args.device,hidden_dim=[128,128])
+    # APNet=STAR(input_dim=np.prod(args.state_shape)+32, feature_dim=256, device=args.device,hidden_dim=[128,128])
+    APNet = Actor_Preprocess_Net(
+        input_dim=np.prod(args.state_shape), device=args.device, feature_dim=256, hidden_size=[128,128])
     actor = ActorProb(APNet,
                       args.action_shape,
                       unbounded=True,
@@ -239,12 +241,12 @@ def test_ppo(args: argparse.Namespace = get_args()) -> None:
         env = gym.make("Navigation-v0", headless=args.headless,mode=args.test)
         policy.eval()
         collector = Collector(policy, env, log_path=log_path, label='try')
-        result = collector.collect(render=args.render, n_episode=100)
+        result = collector.collect(render=args.render, n_episode=1000)
         # 将字典转换为DataFrame
         df = pd.DataFrame(result)
         # 保存为Excel文件
         df.to_excel(
-            "result_{}_{}_{}_{}_{}_{}.xlsx".format(
+            "result_nav_{}_{}_{}_{}_{}_{}.xlsx".format(
                 log_model_name,time.month, time.day, time.hour, time.minute, time.second
             ),
             index=False,

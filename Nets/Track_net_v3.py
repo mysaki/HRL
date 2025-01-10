@@ -69,8 +69,7 @@ class Track_Net(nn.Module):
             self.conv_net,
             layer_init(nn.Linear(self.convd_output_dim,feature_dim)),
             nn.ReLU(inplace=True),
-            )
-            self.model = nn.DataParallel(self.model).to(self.device)
+            ).to(self.device)
             with torch.no_grad():
                 self.output_dim=feature_dim
         else:
@@ -97,7 +96,9 @@ class Track_Net(nn.Module):
         if len(obs.shape) == 3:
             obs = np.array([obs])
         obs = torch.as_tensor(obs, device=self.device, dtype=torch.float32)
-        return self.model(obs), state
+        logits = self.model(obs)
+        torch.cuda.empty_cache()
+        return logits, state
 
 if __name__ == "__main__":
     Net=Track_Net(3,250,250,2,'cuda',output_dim=512,layer_init=layer_init).cuda()

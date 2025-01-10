@@ -44,7 +44,11 @@ class HierarchicalPolicy(BasePolicy):
         origin_obs = torch.from_numpy(batch.obs).to(config.device)
         # 获得底层跟踪能力智能体对应的动作
         size = origin_obs.shape[0]
+        # print("original_size:",origin_obs.shape)
+        # print("original_obs:",origin_obs)
         modified_obs = torch.cat([origin_obs[:,:2], torch.tensor([1,0]).unsqueeze(0).repeat(size,1).to(config.device),origin_obs[:,2:]], dim=1)
+        # print("modified_obs",modified_obs)
+        # print("original_size:",modified_obs.shape)
         low_level_track_batch = batch.copy()
         low_level_track_batch['obs']=modified_obs
         low_level_track_batch = self.low_level_policy.forward(
@@ -211,7 +215,7 @@ def test_ppo() -> None:
         action_space=env.action_space,
         action_bound_method='clip',
     )
-    log_low_model_path = "Log/join_train_track_ppo_11_17_0_0"
+    log_low_model_path = "Log/join_train_track_ppo_12_24_16_27"
 
     print(f"Loading low level agent under {log_low_model_path}")
     ckpt_path = os.path.join(log_low_model_path, "Track_train.pth")
@@ -227,8 +231,8 @@ def test_ppo() -> None:
     # model
     high_net = Net(state_shape=config.state_shape, hidden_sizes=config.high_policy_params['hidden_size'], device=config.device)
     high_actor = ActorProb(high_net, config.high_level_action.shape,
-                            # unbounded=True,
-                            conditioned_sigma = True,
+                            unbounded=True,
+                            # conditioned_sigma = True,
                             device=config.device).to(config.device)
     high_critic = Critic(
         Net(state_shape=config.state_shape, hidden_sizes=config.high_policy_params['hidden_size'], device=config.device),
@@ -236,11 +240,11 @@ def test_ppo() -> None:
     ).to(config.device)
     high_actor_critic = ActorCritic(high_actor, high_critic)
     # orthogonal initialization
-    for m in high_actor_critic.modules():
-        if isinstance(m, torch.nn.Linear):
-            torch.nn.init.orthogonal_(m.weight)
-            torch.nn.init.zeros_(m.bias)
-    high_optim = torch.optim.Adam(high_actor_critic.parameters(), lr=config.lr)
+    # for m in high_actor_critic.modules():
+    #     if isinstance(m, torch.nn.Linear):
+    #         torch.nn.init.orthogonal_(m.weight)
+    #         torch.nn.init.zeros_(m.bias)
+    high_optim = torch.optim.Adam(high_actor_critic.parameters(), lr=config.lr,eps=1e-3)
 
     # replace DiagGuassian with Independent(Normal) which is equivalent
     # pass *logits to be consistent with policy.forward
@@ -333,7 +337,7 @@ def test_ppo() -> None:
         df = pd.DataFrame(result)
         # 保存为Excel文件
         df.to_excel(
-            "result_hierarchical_{}_{}_{}_{}_{}.xlsx".format(
+            "result_hierarchical_ppo_{}_{}_{}_{}_{}.xlsx".format(
                 time.month, time.day, time.hour, time.minute, time.second
             ),
             index=False,

@@ -39,7 +39,7 @@ class HierarchicalPolicy(BasePolicy):
         # 高层策略决定方向目标
         high_level_batch = self.high_level_policy.forward(batch)
         high_level_action = high_level_batch['act']
-        print("action:",high_level_action)
+        # print("action:",high_level_action)
         high_level_action = self.high_level_policy.exploration_noise(high_level_action, batch)
         high_level_action = [
             [0,1] if action == 0 else
@@ -69,6 +69,7 @@ class HierarchicalPolicy(BasePolicy):
         low_level_batch= self.low_level_policy.forward(Batch(low_level_batch))
         low_level_batch['low_level_obs'] = modified_obs
         low_level_batch['high_level_act'] = high_level_batch['act']
+        low_level_batch['obs']=batch.obs
         return Batch(low_level_batch)
 
     def learn(self, batch, **kwargs):
@@ -154,6 +155,7 @@ def test_ppo() -> None:
                                 feature_dim=256, 
                                 hidden_size=[128,128]
                                 ).to(config.device)
+    # low_policy_CPNet = STAR(input_dim=np.prod(low_policy_state_dim)+32, feature_dim=256, device=config.device,hidden_dim=[128,128])
     low_policy_actor = ActorProb(low_policy_APNet,
                     config.action_shape,
                     unbounded=True,
@@ -200,7 +202,7 @@ def test_ppo() -> None:
         action_space=env.action_space,
         action_bound_method='clip',
     )
-    log_low_model_path = "Log/join_train_track_ppo_11_17_0_0"
+    log_low_model_path = "Log/join_train_track_ppo_12_29_11_2"
 
     print(f"Loading low level agent under {log_low_model_path}")
     ckpt_path = os.path.join(log_low_model_path, "Track_train.pth")
@@ -344,7 +346,7 @@ def test_ppo() -> None:
         if os.path.exists(ckpt_path):
             checkpoint = torch.load(ckpt_path)
             # high_level_policy.load_state_dict(checkpoint['high_level_policy_state_dict'])
-            hierarchical_policy.load_state_dict(checkpoint)
+            hierarchical_policy.high_level_policy.load_state_dict(checkpoint,strict = False)
             # low_level_policy.load_state_dict(checkpoint['low_level_policy_state_dict'])
             # low_level_optim.load_state_dict(checkpoint["low_level_optim"])
             # high_optim.load_state_dict(checkpoint["high_level_optim"])
@@ -362,7 +364,7 @@ def test_ppo() -> None:
         df = pd.DataFrame(result)
         # 保存为Excel文件
         df.to_excel(
-            "result_hierarchical_{}_{}_{}_{}_{}.xlsx".format(
+            "result_hierarchical_dqn_{}_{}_{}_{}_{}.xlsx".format(
                 time.month, time.day, time.hour, time.minute, time.second
             ),
             index=False,

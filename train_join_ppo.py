@@ -27,8 +27,8 @@ def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('--headless', type=bool, default=True)
     parser.add_argument("--task", type=str, default="Navigation-v0")
-    parser.add_argument('--test', type=bool, default=True)
-    parser.add_argument("--load-model", type=bool, default=True)
+    parser.add_argument('--test', type=bool, default=False)
+    parser.add_argument("--load-model", type=bool, default=False)
     parser.add_argument("--reward-threshold", type=float, default=150000000)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--buffer-size", type=int, default=20000)
@@ -44,13 +44,13 @@ def get_args() -> argparse.Namespace:
     parser.add_argument("--critic-hidden-sizes", type=int,
                         nargs="*", default=[128])
     parser.add_argument("--training-num", type=int, default=20)
-    parser.add_argument("--test-num", type=int, default=4)
+    parser.add_argument("--test-num", type=int, default=2)
     parser.add_argument("--logdir", type=str, default="Log")
     parser.add_argument("--render", type=float, default=0.0)
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda" if torch.cuda.is_available() else "cpu",
+        default="cuda:1" if torch.cuda.is_available() else "cpu",
     )
     # ppo special
     parser.add_argument("--vf-coef", type=float, default=0.25)
@@ -82,7 +82,7 @@ def test_ppo(args: argparse.Namespace = get_args()) -> None:
     # log
     log_path = os.path.join(args.logdir, "join_{}_track_ppo_{}_{}_{}_{}".format(
         label,time.month, time.day, time.hour, time.minute, time.second))
-    log_model_name = "join_train_track_ppo_11_17_0_0"
+    log_model_name = "join_train_track_ppo_12_27_11_28"
     log_mode_path = os.path.join("Log", log_model_name)
     writer = SummaryWriter(log_path)
 
@@ -90,16 +90,19 @@ def test_ppo(args: argparse.Namespace = get_args()) -> None:
     #    policy.load_state_dict(torch.load('./log/20240402/Safe_test.pth'))
     #    print('Policy load!')                                                                                                                                                                                                                                                                                   ')
 
-    # model
+    #  
     # Q_param = V_param = {"hidden_sizes": [64,64,64,64]}
     # APNet = STAR(
     #     input_dim=np.prod(args.state_shape)+32, device=args.device, feature_dim=256, hidden_dim=[128,128],norm_layers=None)
-    CPNet = Critic_Preprocess_Net(
-        input_dim=np.prod(args.state_shape), device=args.device, feature_dim=256, hidden_size=[128,128])
+    # CPNet = Critic_Preprocess_Net(
+    #     input_dim=np.prod(args.state_shape), device=args.device, feature_dim=256, hidden_size=[128,128])
+    CPNet = STAR(input_dim=np.prod(args.state_shape)+32, feature_dim=256, device=args.device,hidden_dim=[128,128])
     # Q_param = V_param = {"hidden_sizes": [64, 64]}
     # CPNet = Critic_Preprocess_Net(
     #     input_dim=34, action_shape=2, device=args.device, num_atoms=2, dueling_param=(Q_param, V_param), feature_dim=64, hidden_size=64)
-    APNet=STAR(input_dim=np.prod(args.state_shape)+32, feature_dim=256, device=args.device,hidden_dim=[128,128])
+    # APNet=STAR(input_dim=np.prod(args.state_shape)+32, feature_dim=256, device=args.device,hidden_dim=[128,128])
+    APNet=Actor_Preprocess_Net(
+        input_dim=np.prod(args.state_shape), device=args.device, feature_dim=256, hidden_size=[128,128])
     actor = ActorProb(APNet,
                       args.action_shape,
                       unbounded=True,

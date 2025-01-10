@@ -17,6 +17,7 @@ deploy_key_rsa
 detect_result/*
 Log/*
 log/*
+test_records/*
 
 # model:
 *.pth

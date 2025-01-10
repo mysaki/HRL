@@ -7,12 +7,12 @@ import numpy as np
 from gymnasium import spaces
 task="Hierarchical-v0"
 resume = False
-resume_model = "hierarchical_track_ppo_12_8_13_11"
+resume_model = "hierarchical_track_ppo_12_10_23_21"
 reward_threshold=4900000
 seed=1
 buffer_size=20000
-lr=1e-4
-gamma=0.995
+lr=1e-3
+gamma=0.99
 epoch=100
 step_per_epoch=20000
 episode_per_collect=20
@@ -20,14 +20,14 @@ repeat_per_collect=4
 step_per_collect = 8000
 eps_test = 0.05
 eps_train =0.1
-batch_size=1024
+batch_size=512
 hidden_sizes=[128, 128, 128, 128]
 headless = True if resume == False else False
 training_num=20
 test_num=2
 logdir="log"
 render=0.0
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda:1" if torch.cuda.is_available() else "cpu"
 save_interval = 4
 update_per_step = 0.01
 # high_level_action = spaces.Discrete(2)
@@ -51,7 +51,7 @@ low_policy_params={
 
 }
 high_policy_params={
-    "discount_factor":0.995,
+    "discount_factor":0.95,
     "max_grad_norm":0.5,
     "eps_clip":0.2,
     "vf_coef":0.25,
@@ -63,7 +63,7 @@ high_policy_params={
     "value_clip":1,
     "gae_lambda":0.95,
     'feature_dim':256,
-    'hidden_size':[128,128,128,128],
+    'hidden_size':[128,128],
 
 }
 # high_policy_params={
