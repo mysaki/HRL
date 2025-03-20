@@ -33,6 +33,7 @@ update_per_step = 0.01
 high_level_action = spaces.Box(
     low=np.array([0, 0]), high=np.array([1, 1]), dtype=np.float32
 )
+
 low_policy_params={
     "discount_factor":0.995,
     "max_grad_norm":0.5,
@@ -103,6 +104,7 @@ max_y_vel=1.46
 chassis_radius=0.07
 delta_v=1.5
 max_count=2000
+max_nav_count = 1000
 time_step =0.05
 safe_distance=0.51
 best_angle=0

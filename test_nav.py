@@ -4,27 +4,30 @@ from tianshou.data import Batch
 import pandas as pd
 import os
 import csv
-from get_test_nav_policy import get_policy_nav,get_A_STAR_policy,get_C_STAR_policy,get_Both_STAR_policy,get_A_STAR_only_policy,get_A_STAR_mha_policy,get_A_STAR_rnn_policy,get_C_STAR_only_policy,get_C_STAR_mha_policy,get_C_STAR_rnn_policy,get_Both_STAR_only_policy,get_Both_STAR_mha_policy,get_Both_STAR_rnn_policy
-model_1 = "nav"
-model_2 = "join_C_STAR"
+import config
+from get_test_nav_policy import *#get_policy_nav,get_A_STAR_policy,get_C_STAR_policy,get_Both_STAR_policy,get_A_STAR_only_policy,get_A_STAR_mha_policy,get_A_STAR_rnn_policy,get_C_STAR_only_policy,get_C_STAR_mha_policy,get_C_STAR_rnn_policy,get_Both_STAR_only_policy,get_Both_STAR_mha_policy,get_Both_STAR_rnn_policy,get
+
 policy_NAV = get_policy_nav(path="./Log/nav_train_ppo_12_29_11_27")
-policy_ASTAR = get_A_STAR_policy(path="./Log/join_train_track_ppo_12_29_11_2")
-policy_ASTAR_rnn = get_A_STAR_rnn_policy(path="./Log/join_train_track_ppo_1_3_16_31")
-policy_ASTAR_mha = get_A_STAR_mha_policy(path="./Log/join_train_track_ppo_1_3_16_29")
-policy_ASTAR_only = get_A_STAR_only_policy(path="./Log/join_train_track_ppo_1_2_14_51")
-policy_CSTAR = get_C_STAR_policy(path="./Log/join_train_track_ppo_12_27_11_21")
-policy_CSTAR_rnn = get_C_STAR_rnn_policy(path="./Log/join_train_track_ppo_12_31_11_7")
-policy_CSTAR_mha = get_C_STAR_mha_policy(path="./Log/join_train_track_ppo_1_4_0_5")
+# policy_NAV_TRACK = get_policy_nav(path="./Log/track_train_ppo_2_18_15_50")
+policy_NT_SHARE = get_policy_nav(path="./Log/track_train_ppo_2_20_9_38")
+# policy_ASTAR = get_A_STAR_policy(path="./Log/join_train_track_ppo_12_29_11_2")
+# policy_ASTAR_rnn = get_A_STAR_rnn_policy(path="./Log/join_train_track_ppo_1_3_16_31")
+# policy_ASTAR_mha = get_A_STAR_mha_policy(path="./Log/join_train_track_ppo_1_3_16_29")
+policy_ASTAR_only = get_A_STAR_only_policy(path="./Log/join_train_track_ppo_1_18_13_38")
+# policy_CSTAR = get_C_STAR_policy(path="./Log/join_train_track_ppo_12_27_11_21")
+# policy_CSTAR_rnn = get_C_STAR_rnn_policy(path="./Log/join_train_track_ppo_12_31_11_7")
+# policy_CSTAR_mha = get_C_STAR_mha_policy(path="./Log/join_train_track_ppo_1_4_0_5")
 policy_CSTAR_only = get_C_STAR_only_policy(path="./Log/join_train_track_ppo_1_4_15_23")
-policy_ACSTAR = get_Both_STAR_policy(path="./Log/join_train_track_ppo_12_27_11_28")
-policy_ACSTAR_rnn = get_Both_STAR_rnn_policy(path="./Log/join_train_track_ppo_12_31_11_1")
-policy_ACSTAR_mha = get_Both_STAR_mha_policy(path="./Log/join_train_track_ppo_12_31_11_22")
-policy_ACSTAR_only = get_Both_STAR_only_policy(path="./Log/join_train_track_ppo_1_1_21_11")
-policy_set = [policy_NAV,policy_CSTAR,policy_ASTAR,policy_ACSTAR,policy_CSTAR_rnn,policy_ASTAR_rnn,policy_ACSTAR_rnn,policy_CSTAR_only,policy_ASTAR_only,policy_ACSTAR_only,policy_CSTAR_mha,policy_ASTAR_mha,policy_ACSTAR_mha]
+# policy_ACSTAR = get_Both_STAR_policy(path="./Log/join_train_track_ppo_12_27_11_28")
+# policy_ASTAR_CSTAR_ONLY = get_A_STAR_C_STAR_Only_policy(path="./Log/join_train_track_ppo_1_14_20_31")
+# policy_ACSTAR_rnn = get_Both_STAR_rnn_policy(path="./Log/join_train_track_ppo_12_31_11_1")
+# policy_ACSTAR_mha = get_Both_STAR_mha_policy(path="./Log/join_train_track_ppo_12_31_11_22")
+policy_ACSTAR_only = get_Both_STAR_only_policy(path="./Log/join_train_track_ppo_1_18_10_29")
+policy_set = [policy_NAV,policy_NT_SHARE,policy_ACSTAR_only,policy_ASTAR_only,policy_CSTAR_only]
 for policy in policy_set:
     policy.eval()
 # model_name =['NAV','CSTAR','ASTAR','ACSTAR','CSTAR_RNN','ASTAR_RNN','ACSTAR_RNN','CSTAR_ONLY','ASTAR_ONLY','ACSTAR_ONLY','CSTAR_MHA','ASTAR_MHA','ACSTAR_MHA']
-model_name = ['NAV','CSTAR_ONLY','ASTAR_ONLY','ACSTAR_ONLY']
+model_name = ['NAV','NAV_TRACK_SHARE','AC_SHARE','A_SHARE','C_SHARE']
 task = "Navigation-v0"
 test_count = 0
 episode_count = 0
@@ -39,6 +42,10 @@ os.makedirs(folder_name)
 result_file_path = "{}/result_nav_{}_{}_{}_{}_{}.csv".format(
     folder_name, time.month, time.day, time.hour, time.minute, time.second
 )
+print("*"*20)
+print("执行的任务为:",task)
+print("比较的模型为：",model_name)
+print("*" * 20)
 for episode in range(test_episodes):
     print("**********Current episode:",episode,"**********")
     epi_path = os.path.join(folder_name,str(episode))
@@ -69,6 +76,9 @@ for episode in range(test_episodes):
         avg_dist_key = "_".join(["avg_dist", model_name[i]])
         if avg_dist_key not in result:
             result[avg_dist_key] = []
+        collision_key = "_".join(["collision", model_name[i]])
+        if collision_key not in result:
+            result[collision_key] = []
         if i == 0:
             # print("reset env")
             state, _ = env.reset()
@@ -103,9 +113,10 @@ for episode in range(test_episodes):
         epi_std_dist = 0
         epi_var_dist = 0
         epi_avg_dist = 0
+        epi_collisions = 0
         policy = policy_set[i]
         file_path = os.path.join(folder_name, str(episode), f"{model_name[i]}_episode_data.csv")
-        header = ['x','y','yaw','min_dist','max_dist','avg_dist','std_dist','var_dist','laser_data']
+        header = ['x','y','yaw','if_collision','min_dist','max_dist','avg_dist','std_dist','var_dist','laser_data']
         # print("tracker pos:",env.tracker.get_2d_pose(),"target pos:",env.target.get_2d_pose(),"episode_count:",episode_count,"epi_reward:",epi_reward)
         with open(file_path, mode="w", newline="") as file:
             writer = csv.writer(file)
@@ -124,6 +135,7 @@ for episode in range(test_episodes):
             epi_std_dist += info["std_dist"]
             epi_var_dist += info["var_dist"]
             epi_avg_dist += info["avg_dist"]
+            epi_collisions += info["if_collision"]
             # 写入数据
             with open(file_path, mode="a", newline="") as file:
                 writer = csv.writer(file)
@@ -132,6 +144,7 @@ for episode in range(test_episodes):
                         info["tracker_pos"][0],
                         info["tracker_pos"][1],
                         info["tracker_pos"][2],
+                        info["if_collision"],
                         info["min_dist"],
                         info["max_dist"],
                         info["avg_dist"],
@@ -148,6 +161,7 @@ for episode in range(test_episodes):
         result[avg_dist_key].append(epi_avg_dist / episode_count)
         result[std_dist_key].append(epi_std_dist / episode_count)
         result[var_dist_key].append(epi_var_dist / episode_count)
+        result[collision_key].append(epi_collisions/ episode_count)
     if episode == 0:
         with open(result_file_path,mode = 'w') as f:
             writer = csv.writer(f)
