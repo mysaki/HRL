@@ -27,3 +27,4 @@ test_records/*
 *.jpg
 *.png
 *.txt
+*.pyc
