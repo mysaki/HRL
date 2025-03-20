@@ -12,10 +12,10 @@ from PIL import Image
 import datetime
 
 # 设置路径
-data_dir = "labeled_images/real"
+data_dir = "./detect_module/labeled_images/real"
 img_height, img_width = 250, 250  # 图像大小
 time = datetime.datetime.now()  # 获取当前时间
-log_dir = "detection_record"
+log_dir = "./detect_module/detection_record"
 log_path = os.path.join(log_dir,"detection_{}_{}_{}_{}".format(
     time.month, time.day, time.hour, time.minute, time.second))
 if os.path.exists(log_path) == False:

@@ -21,20 +21,20 @@ from tianshou.utils.net.continuous import ActorProb, Critic
 from Nets.Actor_Net import Actor_Preprocess_Net
 from Nets.Critic_Net import Critic_Preprocess_Net
 from Nets.Star_net_rnn_attention import STAR
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('--headless', type=bool, default=True)
     parser.add_argument("--task", type=str, default="Dynamic-v0")
-    parser.add_argument('--test', type=bool, default=False)
-    parser.add_argument("--load-model", type=bool, default=False)
+    parser.add_argument('--test', type=bool, default=True)
+    parser.add_argument("--load-model", type=bool, default=True)
     parser.add_argument("--reward-threshold", type=float, default=150000000)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--buffer-size", type=int, default=20000)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--gamma", type=float, default=0.995)
-    parser.add_argument("--epoch", type=int, default=25)
+    parser.add_argument("--epoch", type=int, default=100)
     parser.add_argument("--step-per-epoch", type=int, default=100000)
     parser.add_argument("--episode-per-collect", type=int, default=20)
     parser.add_argument("--repeat-per-collect", type=int, default=2)
@@ -50,7 +50,7 @@ def get_args() -> argparse.Namespace:
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda:1" if torch.cuda.is_available() else "cpu",
+        default="cuda:0" if torch.cuda.is_available() else "cpu",
     )
     # ppo special
     parser.add_argument("--vf-coef", type=float, default=0.25)
@@ -81,7 +81,7 @@ def test_ppo(args: argparse.Namespace = get_args()) -> None:
     # log
     log_path = os.path.join(args.logdir, "track_{}_ppo_{}_{}_{}_{}".format(
         label,time.month, time.day, time.hour, time.minute, time.second))
-    log_model_name = "track_train_ppo_12_23_14_29"
+    log_model_name = "track_train_ppo_12_29_10_54"
     log_mode_path = os.path.join('./Log', log_model_name)
     writer = SummaryWriter(log_path)
 
@@ -213,7 +213,7 @@ def test_ppo(args: argparse.Namespace = get_args()) -> None:
 
     else:
         # Let's watch its performance!
-        # args.headless = False
+        args.headless = False
         env = gym.make(args.task, headless=args.headless,mode=args.test)
         policy.eval()
         collector = Collector(policy, env, log_path=log_path, label='try')

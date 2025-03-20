@@ -5,8 +5,7 @@ from tianshou.utils.net.common import MLP
 from tianshou.utils.net.common import Recurrent_GRU as Recurrent
 import copy
 from fightingcv_attention.attention.SelfAttention import ScaledDotProductAttention
-import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 class STAR(nn.Module):
 
     def __init__(
@@ -25,35 +24,35 @@ class STAR(nn.Module):
         self.soft_max = nn.Softmax(dim=2)
 
         # 循环神经网络层
-        # self.rnn_p = Recurrent(
-        #     layer_num=1,
-        #     state_shape=laser_dim,
-        #     action_shape=laser_dim,
-        #     device=self.device,
-        # ).to(self.device)
-        # self.rnn_b = Recurrent(
-        #     layer_num=1,
-        #     state_shape=laser_dim,
-        #     action_shape=laser_dim,
-        #     device=self.device,
-        # ).to(self.device)
-        # self.rnn_c = Recurrent(
-        #     layer_num=1,
-        #     state_shape=laser_dim,
-        #     action_shape=laser_dim,
-        #     device=self.device,
+        self.rnn_p = Recurrent(
+            layer_num=1,
+            state_shape=laser_dim,
+            action_shape=laser_dim,
+            device=self.device,
+        ).to(self.device)
+        self.rnn_b = Recurrent(
+            layer_num=1,
+            state_shape=laser_dim,
+            action_shape=laser_dim,
+            device=self.device,
+        ).to(self.device)
+        self.rnn_c = Recurrent(
+            layer_num=1,
+            state_shape=laser_dim,
+            action_shape=laser_dim,
+            device=self.device,
 
-        # ).to(self.device)
-        # # 注意力层
-        # self.sa_p = ScaledDotProductAttention(
-        #     d_model=laser_dim, d_k=laser_dim, d_v=laser_dim, h=8
-        # ).to(self.device)
-        # self.sa_b = ScaledDotProductAttention(
-        #     d_model=laser_dim, d_k=laser_dim, d_v=laser_dim, h=8
-        # ).to(self.device)
-        # self.sa_c = ScaledDotProductAttention(
-        #     d_model=laser_dim, d_k=laser_dim, d_v=laser_dim, h=8
-        # ).to(self.device)
+        ).to(self.device)
+        # 注意力层
+        self.sa_p = ScaledDotProductAttention(
+            d_model=laser_dim, d_k=laser_dim, d_v=laser_dim, h=8
+        ).to(self.device)
+        self.sa_b = ScaledDotProductAttention(
+            d_model=laser_dim, d_k=laser_dim, d_v=laser_dim, h=8
+        ).to(self.device)
+        self.sa_c = ScaledDotProductAttention(
+            d_model=laser_dim, d_k=laser_dim, d_v=laser_dim, h=8
+        ).to(self.device)
 
         # 归一化层+Dropout层
         # self.norm_p = nn.LayerNorm(laser_dim).to(self.device)
@@ -136,51 +135,60 @@ class STAR(nn.Module):
             hidden_b = None
             hidden_c = None          
         # fuse_a = self.fuse_networks(self.mlp_a,self.mlp_public)
-        # self.fuse_b = self.fuse_networks(self.mlp_b,self.mlp_public)
-        # self.fuse_c = self.fuse_networks(self.mlp_c, self.mlp_public)
-
+        # fuse_b = self.fuse_networks(self.mlp_b,self.mlp_public)
+        # fuse_c = self.fuse_networks(self.mlp_c,self.mlp_public)
         # print("star:",obs.shape)
         # output_b = self.mlp_b(obs)
         output = []
-
         # 根据 tag 选择对应的 MLP
         for i in range(obs.shape[0]):
             # if torch.equal(obs[i,2:4], torch.tensor([0,0],device=self.device)):
             #     output.append(fuse_a(obs[i]))
-            # laser_data = obs[i, -self.laser_dim: ]
-            # laser_rnn, hidden_p = self.rnn_p(
-            #     laser_data.unsqueeze(dim=0), hidden_p
-            # )
-            # laser_rnn = laser_rnn.unsqueeze(dim=0)
+            laser_data = obs[i, -self.laser_dim: ]
+            laser_rnn, hidden_p = self.rnn_p(
+                laser_data.unsqueeze(dim=0), hidden_p
+            )
+            laser_att = self.sa_p(
+                laser_rnn.unsqueeze(dim=0).unsqueeze(dim=0),
+                laser_rnn.unsqueeze(dim=0).unsqueeze(dim=0),
+                laser_rnn.unsqueeze(dim=0).unsqueeze(dim=0),
+            )
             # laser_att = self.norm_p(self.dropout_p(laser_att) + laser_rnn)
-            # laser_att = self.soft_max(laser_data)
-            # combined_data = torch.cat((laser_att[0][0], obs[i]), dim=-1)
-            # print(obs)
-            # print(obs[i])
-            output_p = self.mlp_public(obs[i])
+            laser_att = self.soft_max(laser_att)
+            combined_data = torch.cat((laser_att[0][0], obs[i]), dim=-1)
+            output_p = self.mlp_public(combined_data)
             if torch.equal(obs[i, 2:4], torch.tensor([1, 0], device=self.device)):
                 # print("track part acivated")
-                # laser_data = obs[i, -self.laser_dim: ]
-                # laser_rnn, hidden_b = self.rnn_b(
-                #     laser_data.unsqueeze(dim=0), hidden_b
-                # )
-                # laser_rnn = laser_rnn.unsqueeze(dim=0)
-                # laser_att = self.soft_max(laser_data)
+                laser_data = obs[i, -self.laser_dim: ]
+                laser_rnn, hidden_b = self.rnn_b(
+                    laser_data.unsqueeze(dim=0), hidden_b
+                )
+                laser_att = self.sa_b(
+                    laser_rnn.unsqueeze(dim=0).unsqueeze(dim=0),
+                    laser_rnn.unsqueeze(dim=0).unsqueeze(dim=0),
+                    laser_rnn.unsqueeze(dim=0).unsqueeze(dim=0),
+                )
+                
+                laser_att = self.soft_max(laser_att)
                 # laser_att = self.norm_b(self.dropout_b(laser_att) + laser_rnn)
-                # combined_data = torch.cat((laser_att[0][0], obs[i]), dim=-1)
-                output_b = self.mlp_b(obs[i])
+                combined_data = torch.cat((laser_att[0][0], obs[i]), dim=-1)
+                output_b = self.mlp_b(combined_data)
                 output.append(torch.cat((output_b, output_p)))
             elif torch.equal(obs[i, 2:4], torch.tensor([0, 1], device=self.device)):
                 # print("safe part acivated")
-                # laser_data = obs[i, -self.laser_dim: ]
-                # laser_rnn, hidden_c = self.rnn_c(
-                #     laser_data.unsqueeze(dim=0), hidden_c
-                # )
-                # laser_rnn = laser_rnn.unsqueeze(dim=0)
-                # laser_att = self.soft_max(laser_data)
+                laser_data = obs[i, -self.laser_dim: ]
+                laser_rnn, hidden_c = self.rnn_c(
+                    laser_data.unsqueeze(dim=0), hidden_c
+                )
+                laser_att = self.sa_c(
+                    laser_rnn.unsqueeze(dim=0).unsqueeze(dim=0),
+                    laser_rnn.unsqueeze(dim=0).unsqueeze(dim=0),
+                    laser_rnn.unsqueeze(dim=0).unsqueeze(dim=0),
+                )
+                laser_att = self.soft_max(laser_att)
                 # laser_att = self.norm_c(self.dropout_c(laser_att) + laser_rnn)
-                # combined_data = torch.cat((laser_att[0][0], obs[i]), dim=-1)
-                output_c = self.mlp_c(obs[i])
+                combined_data = torch.cat((laser_att[0][0], obs[i]), dim=-1)
+                output_c = self.mlp_c(combined_data)
                 output.append(torch.cat((output_c, output_p)))
             else:
                 raise ValueError(
@@ -192,7 +200,7 @@ class STAR(nn.Module):
 
 def main():
     # 模型参数
-    input_dim = 36
+    input_dim = 68
     hidden_dim = [64, 64]
     feature_dim = 128
     device = "cuda:1"
@@ -201,7 +209,7 @@ def main():
     model = STAR(input_dim, hidden_dim, feature_dim, device)
 
     # 示例输入
-    x = torch.randn(4, input_dim).to(device)  # 4个样本
+    x = torch.randn(4, input_dim - 32).to(device)  # 4个样本
     x[:, 2:4] = torch.tensor([0, 1])
 
     # 进行前向传播

@@ -22,13 +22,13 @@ from Nets.Actor_Net import Actor_Preprocess_Net
 # from Nets.Critic_Net import Critic_Preprocess_Net
 from Nets.Critic_Net import Critic_Preprocess_Net
 from Nets.Star_net_rnn_attention import STAR
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('--headless', type=bool, default=True)
     parser.add_argument("--task", type=str, default="Navigation-v0")
     parser.add_argument('--test', type=bool, default=False)
-    parser.add_argument("--load-model", type=bool, default=False)
+    parser.add_argument("--load-model", type=bool, default=True)
     parser.add_argument("--reward-threshold", type=float, default=150000000)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--buffer-size", type=int, default=20000)
@@ -50,7 +50,7 @@ def get_args() -> argparse.Namespace:
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda:1" if torch.cuda.is_available() else "cpu",
+        default="cuda" if torch.cuda.is_available() else "cpu",
     )
     # ppo special
     parser.add_argument("--vf-coef", type=float, default=0.25)
@@ -81,7 +81,7 @@ def test_ppo(args: argparse.Namespace = get_args()) -> None:
     # log
     log_path = os.path.join(args.logdir, "nav_{}_ppo_{}_{}_{}_{}".format(
         label,time.month, time.day, time.hour, time.minute, time.second))
-    log_model_name = "nav_train_ppo_12_24_16_28"
+    log_model_name = "track_train_ppo_12_29_10_54"
     log_mode_path = os.path.join("Log", log_model_name)
     writer = SummaryWriter(log_path)
 

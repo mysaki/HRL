@@ -5,8 +5,7 @@ from tianshou.utils.net.common import MLP
 from tianshou.utils.net.common import Recurrent_GRU as Recurrent
 import copy
 from fightingcv_attention.attention.SelfAttention import ScaledDotProductAttention
-import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 class STAR(nn.Module):
 
     def __init__(
@@ -100,7 +99,7 @@ class STAR(nn.Module):
             device=device,
             flatten_input=False,
         ).to(self.device)
-        self.output_dim = 2 * feature_dim
+        self.output_dim = feature_dim
         self.hidden_p = None
         self.hidden_b = None
         self.hidden_c = None
@@ -136,57 +135,62 @@ class STAR(nn.Module):
             hidden_b = None
             hidden_c = None          
         # fuse_a = self.fuse_networks(self.mlp_a,self.mlp_public)
-        # self.fuse_b = self.fuse_networks(self.mlp_b,self.mlp_public)
-        # self.fuse_c = self.fuse_networks(self.mlp_c, self.mlp_public)
+        self.fuse_b = self.fuse_networks(self.mlp_b,self.mlp_public)
+        self.fuse_c = self.fuse_networks(self.mlp_c, self.mlp_public)
 
         # print("star:",obs.shape)
         # output_b = self.mlp_b(obs)
         output = []
-
-        # 根据 tag 选择对应的 MLP
         for i in range(obs.shape[0]):
-            # if torch.equal(obs[i,2:4], torch.tensor([0,0],device=self.device)):
-            #     output.append(fuse_a(obs[i]))
-            # laser_data = obs[i, -self.laser_dim: ]
-            # laser_rnn, hidden_p = self.rnn_p(
-            #     laser_data.unsqueeze(dim=0), hidden_p
-            # )
-            # laser_rnn = laser_rnn.unsqueeze(dim=0)
-            # laser_att = self.norm_p(self.dropout_p(laser_att) + laser_rnn)
-            # laser_att = self.soft_max(laser_data)
-            # combined_data = torch.cat((laser_att[0][0], obs[i]), dim=-1)
-            # print(obs)
-            # print(obs[i])
-            output_p = self.mlp_public(obs[i])
             if torch.equal(obs[i, 2:4], torch.tensor([1, 0], device=self.device)):
-                # print("track part acivated")
-                # laser_data = obs[i, -self.laser_dim: ]
-                # laser_rnn, hidden_b = self.rnn_b(
-                #     laser_data.unsqueeze(dim=0), hidden_b
-                # )
-                # laser_rnn = laser_rnn.unsqueeze(dim=0)
-                # laser_att = self.soft_max(laser_data)
-                # laser_att = self.norm_b(self.dropout_b(laser_att) + laser_rnn)
-                # combined_data = torch.cat((laser_att[0][0], obs[i]), dim=-1)
-                output_b = self.mlp_b(obs[i])
-                output.append(torch.cat((output_b, output_p)))
+                output_b = self.fuse_b(obs[i])
+                output.append(output_b)
             elif torch.equal(obs[i, 2:4], torch.tensor([0, 1], device=self.device)):
-                # print("safe part acivated")
-                # laser_data = obs[i, -self.laser_dim: ]
-                # laser_rnn, hidden_c = self.rnn_c(
-                #     laser_data.unsqueeze(dim=0), hidden_c
-                # )
-                # laser_rnn = laser_rnn.unsqueeze(dim=0)
-                # laser_att = self.soft_max(laser_data)
-                # laser_att = self.norm_c(self.dropout_c(laser_att) + laser_rnn)
-                # combined_data = torch.cat((laser_att[0][0], obs[i]), dim=-1)
-                output_c = self.mlp_c(obs[i])
-                output.append(torch.cat((output_c, output_p)))
-            else:
-                raise ValueError(
-                    "Invalid tag value. Must be 1, 2, or 3.It's ", obs[i, 2:4]
-                )
-        state = {"hidden_p":hidden_p,"hidden_b":hidden_b,"hidden_c":hidden_c}
+                output_c = self.fuse_c(obs[i])
+                output.append(output_c)
+
+        # # 根据 tag 选择对应的 MLP
+        # for i in range(obs.shape[0]):
+        #     # if torch.equal(obs[i,2:4], torch.tensor([0,0],device=self.device)):
+        #     #     output.append(fuse_a(obs[i]))
+        #     # laser_data = obs[i, -self.laser_dim: ]
+        #     # laser_rnn, hidden_p = self.rnn_p(
+        #     #     laser_data.unsqueeze(dim=0), hidden_p
+        #     # )
+        #     # laser_rnn = laser_rnn.unsqueeze(dim=0)
+        #     # laser_att = self.norm_p(self.dropout_p(laser_att) + laser_rnn)
+        #     # laser_att = self.soft_max(laser_data)
+        #     # combined_data = torch.cat((laser_att[0][0], obs[i]), dim=-1)
+        #     output_p = self.mlp_public(obs[i])
+        #     if torch.equal(obs[i, 2:4], torch.tensor([1, 0], device=self.device)):
+        #         # print("track part acivated")
+        #         # laser_data = obs[i, -self.laser_dim: ]
+        #         # laser_rnn, hidden_b = self.rnn_b(
+        #         #     laser_data.unsqueeze(dim=0), hidden_b
+        #         # )
+        #         # laser_rnn = laser_rnn.unsqueeze(dim=0)
+        #         # laser_att = self.soft_max(laser_data)
+        #         # laser_att = self.norm_b(self.dropout_b(laser_att) + laser_rnn)
+        #         # combined_data = torch.cat((laser_att[0][0], obs[i]), dim=-1)
+        #         output_b = self.mlp_b(obs[i])
+        #         output.append(torch.cat((output_b, output_p)))
+        #     elif torch.equal(obs[i, 2:4], torch.tensor([0, 1], device=self.device)):
+        #         # print("safe part acivated")
+        #         # laser_data = obs[i, -self.laser_dim: ]
+        #         # laser_rnn, hidden_c = self.rnn_c(
+        #         #     laser_data.unsqueeze(dim=0), hidden_c
+        #         # )
+        #         # laser_rnn = laser_rnn.unsqueeze(dim=0)
+        #         # laser_att = self.soft_max(laser_data)
+        #         # laser_att = self.norm_c(self.dropout_c(laser_att) + laser_rnn)
+        #         # combined_data = torch.cat((laser_att[0][0], obs[i]), dim=-1)
+        #         output_c = self.mlp_c(obs[i])
+        #         output.append(torch.cat((output_c, output_p)))
+        #     else:
+        #         raise ValueError(
+        #             "Invalid tag value. Must be 1, 2, or 3.It's ", obs[i, 2:4]
+        #         )
+        # state = {"hidden_p":hidden_p,"hidden_b":hidden_b,"hidden_c":hidden_c}
         return torch.stack(output), state
 
 

@@ -6,10 +6,10 @@ import torch
 import numpy as np
 from gymnasium import spaces
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = "0,1"
+os.environ['CUDA_VISIBLE_DEVICES'] = "1"
 task="Hierarchical-v1"
-resume_model = "hierarchical_track_dqn_12_6_14_19"
-# resume_model = "hierarchical_track_dqn_1_8_9_9"
+# resume_model = "hierarchical_track_dqn_12_6_14_19"
+resume_model = "hierarchical_track_dqn_3_11_11_38"
 resume = False
 reward_threshold=4900000
 seed=1   
@@ -20,25 +20,35 @@ epoch=1000
 step_per_epoch=20000
 episode_per_collect=16
 repeat_per_collect=2
-step_per_collect = 800
+step_per_collect = 3000
 eps_test = 0.05
 eps_train =0.3
+buffer_alpha = 0.6
+beta = 0.4
 batch_size=512
 hidden_sizes=[64, 64]
 headless = True if resume == False else False
-training_num=20
+training_num=10
 test_num=2
 num_atoms = 51
 logdir="log"
 render=0.0
 noisy_std = 0.1
-device = "cuda:1" if torch.cuda.is_available() else "cpu"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 save_interval = 4
 update_per_step = 0.01
 high_level_action = spaces.Discrete(2)
 # high_level_action = spaces.Box(
 #     low=np.array([0, 0]), high=np.array([1, 1]), dtype=np.float32
 # )
+low_action_space = spaces.Box(
+                        low=np.array([-1, -1]), high=np.array([1, 1]),  dtype=np.float32
+                        )
+observation_space = spaces.Box(
+                        low=-10, high=10, shape=(34,), dtype=np.float32
+                    )
+state_shape = observation_space.shape or observation_space.n
+action_shape = low_action_space.shape
 low_policy_params={
     "discount_factor":0.995,
     "max_grad_norm":0.5,
@@ -73,8 +83,8 @@ low_policy_params={
 # }
 high_policy_params = {
     "n_step": 3,
-    "target_update_freq": 8,
-    "hidden_size": [128, 128],
+    "target_update_freq": 10,
+    "hidden_size": [256,256,256,256,256],
     "feature_dim": 256,
 }
 

@@ -4,8 +4,9 @@ from tianshou.utils.net.common import MLP
 # from tianshou.utils.net.common import Recurrent
 from tianshou.utils.net.common import Recurrent_GRU as Recurrent
 import copy
+import os
 from fightingcv_attention.attention.SelfAttention import ScaledDotProductAttention
-
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 class STAR(nn.Module):
 
     def __init__(
